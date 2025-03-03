@@ -1,5 +1,6 @@
 from django.contrib.auth import get_user_model
 from django.db import models
+
 from posts.constants import MAX_LENGTH_STR, MAX_LENGTH_TEXT
 
 User = get_user_model()
@@ -27,7 +28,7 @@ class Group(models.Model):
 
     def __str__(self):
         """Возвращает название группы."""
-        return self.title[:30]
+        return self.title[:MAX_LENGTH_STR]
 
 
 class Post(models.Model):
