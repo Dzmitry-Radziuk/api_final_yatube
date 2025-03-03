@@ -14,8 +14,8 @@ from posts.models import Group, Post
 class BaseViewSet(viewsets.ModelViewSet):
     """Базовый вьюсет с общей логикой для аутентификации и фильтрации."""
 
-    permission_classes = [IsAuthenticated]
-    filter_backends = [SearchFilter]
+    permission_classes = (IsAuthenticated,)
+    filter_backends = (SearchFilter,)
 
     def perform_create(self, serializer):
         """Общий метод для сохранения объектов с текущим пользователем."""
