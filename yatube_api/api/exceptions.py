@@ -6,25 +6,19 @@ from rest_framework.views import exception_handler
 
 
 class FollowAlreadyExistsError(ValidationError):
-    """
-    Исключение, выбрасываемое, когда пользователь уже подписан на другого.
-    """
+    """Выбрасывается, когда пользователь уже подписан на другого."""
     def __init__(self, detail="Вы уже подписаны на этого пользователя."):
         super().__init__({"detail": detail})
 
 
 class SelfFollowError(ValidationError):
-    """
-    Исключение, выбрасываемое при попытке подписаться на себя.
-    """
+    """Выбрасывается при попытке подписаться на себя."""
     def __init__(self, detail="Нельзя подписаться на самого себя!"):
         super().__init__({"detail": detail})
 
 
-def custom_exception_handler(exc, context):
-    """
-    Обработчик исключений, который модифицирует стандартный ответ.
-    """
+def api_exception_handler(exc, context):
+    """Обработчик исключений, который модифицирует стандартный ответ."""
     response = exception_handler(exc, context)
 
     if response is not None:
@@ -34,9 +28,7 @@ def custom_exception_handler(exc, context):
 
 
 def process_error_response(exc, response):
-    """
-    Обрабатывает различные типы ошибок и изменяет их ответы.
-    """
+    """Обрабатывает различные типы ошибок и изменяет их ответы."""
     if isinstance(exc, NotAuthenticated):
         response.data = {'detail': "Учетные данные не были предоставлены."}
 
@@ -62,9 +54,7 @@ def process_error_response(exc, response):
 
 
 def handle_validation_error(response):
-    """
-    Обрабатывает ошибки валидации, изменяя сообщения об ошибках.
-    """
+    """Обрабатывает ошибки валидации, изменяя сообщения об ошибках."""
     if isinstance(response.data, dict):
         for field, messages in response.data.items():
             for idx, message in enumerate(messages):

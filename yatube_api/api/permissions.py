@@ -6,8 +6,8 @@ class IsOwnerOrReadOnly(permissions.BasePermission):
 
     def has_object_permission(self, request, view, obj):
         """Проверяет, имеет ли пользователь право на доступ к объекту."""
-        if request.method in permissions.SAFE_METHODS:
-            return True
-        if not request.user or not request.user.is_authenticated:
-            return False
-        return obj.author == request.user
+        return (
+            request.method in permissions.SAFE_METHODS
+            or (request.user and request.user.is_authenticated
+                and obj.author == request.user)
+        )

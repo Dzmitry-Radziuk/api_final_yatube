@@ -1,21 +1,18 @@
-from django.shortcuts import get_object_or_404
-from rest_framework import viewsets
-from rest_framework.exceptions import NotAuthenticated
-from rest_framework.filters import SearchFilter
-from rest_framework.permissions import (IsAuthenticated,
-                                        IsAuthenticatedOrReadOnly)
-
-from api.paginations import CustomPagination
+from api.paginations import PostPagination
 from api.permissions import IsOwnerOrReadOnly
 from api.serializers import (CommentSerializer, FollowSerializer,
                              GroupSerializer, PostSerializer)
-from posts.models import Comment, Follow, Group, Post
+from django.shortcuts import get_object_or_404
+from posts.models import Group, Post
+from rest_framework import viewsets
+from rest_framework.filters import SearchFilter
+from rest_framework.permissions import (AllowAny, IsAuthenticated,
+                                        IsAuthenticatedOrReadOnly)
 
 
 class BaseViewSet(viewsets.ModelViewSet):
-    """
-    Базовый вьюсет с общей логикой для аутентификации и фильтрации.
-    """
+    """Базовый вьюсет с общей логикой для аутентификации и фильтрации."""
+
     permission_classes = [IsAuthenticated]
     filter_backends = [SearchFilter]
 
@@ -25,60 +22,55 @@ class BaseViewSet(viewsets.ModelViewSet):
 
 
 class FollowViewSet(BaseViewSet):
-    """
-    ViewSet для работы с подписками пользователей.
-    """
-    queryset = Follow.objects.all()
+    """ViewSet для работы с подписками пользователей."""
+
     serializer_class = FollowSerializer
-    search_fields = ['following__username']
+    search_fields = ('following__username',)
+    permission_classes = (IsAuthenticated,)
 
     def get_queryset(self):
         """Возвращает подписки текущего пользователя."""
-        return Follow.objects.filter(user=self.request.user)
+        return self.request.user.followers.all()
 
 
 class PostListViewSet(BaseViewSet):
-    """
-    ViewSet для работы с постами.
-    """
+    """ViewSet для работы с постами."""
+
     queryset = Post.objects.select_related('author')
     serializer_class = PostSerializer
-    permission_classes = (IsOwnerOrReadOnly,)
-    pagination_class = CustomPagination
+    permission_classes = (IsOwnerOrReadOnly, IsAuthenticatedOrReadOnly)
+    pagination_class = PostPagination
 
     def perform_create(self, serializer):
         """Создаёт пост с текущим пользователем как автором."""
-        if not self.request.user.is_authenticated:
-            raise NotAuthenticated()
         serializer.save(author=self.request.user)
 
 
 class CommentListViewSet(BaseViewSet):
-    """
-    ViewSet для работы с комментариями.
-    """
+    """ViewSet для работы с комментариями."""
+
     serializer_class = CommentSerializer
-    permission_classes = (IsOwnerOrReadOnly,)
+    permission_classes = (IsOwnerOrReadOnly, IsAuthenticatedOrReadOnly)
+
+    def get_post(self, post_id):
+        return get_object_or_404(Post, id=post_id)
 
     def get_queryset(self):
         """Возвращает комментарии для конкретного поста."""
         post_id = self.kwargs.get('post_id')
-        get_object_or_404(Post, id=post_id)
-        return Comment.objects.filter(post_id=post_id).select_related('author')
+        post = self.get_post(post_id)
+        return post.comments.select_related('author')
 
     def perform_create(self, serializer):
         """Создаёт комментарий для поста с текущим пользователем(автором)."""
-        if not self.request.user.is_authenticated:
-            raise NotAuthenticated()
         post_id = self.kwargs.get('post_id')
-        post = get_object_or_404(Post, id=post_id)
+        post = self.get_post(post_id)
         serializer.save(author=self.request.user, post=post)
 
 
 class GroupViewSet(viewsets.ReadOnlyModelViewSet):
-    """
-    ViewSet для работы с группами.
-    """
+    """ViewSet для работы с группами."""
+
     queryset = Group.objects.all()
     serializer_class = GroupSerializer
-    permission_classes = (IsAuthenticatedOrReadOnly,)
+    permission_classes = (AllowAny,)

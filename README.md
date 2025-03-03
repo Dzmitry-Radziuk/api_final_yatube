@@ -76,6 +76,88 @@ GET /groups/ - Получение списка всех групп.
 Документация API
 Документация доступна по адресу:
 http://127.0.0.1:8000/redoc/
+
+Для просмотра документации необходимо сначала скачать и развернуть проект.
+
+Примеры запросов и ответов
+Пример 1: Получение всех постов
+
+Запрос:
+GET /posts/
+Ответ:
+[
+  {
+    "id": 1,
+    "author": "user1",
+    "text": "This is the first post",
+    "created": "2025-03-01T12:00:00Z"
+  },
+  {
+    "id": 2,
+    "author": "user2",
+    "text": "This is the second post",
+    "created": "2025-03-02T15:30:00Z"
+  }
+]
+
+Пример 2: Создание нового поста
+
+Запрос:
+POST /posts/
+Content-Type: application/json
+Authorization: Bearer <your_token>
+Тело запроса:
+{
+  "text": "This is a new post"
+}
+Ответ:
+{
+  "id": 3,
+  "author": "user1",
+  "text": "This is a new post",
+  "created": "2025-03-03T14:00:00Z"
+}
+
+Пример 3: Получение комментариев к посту
+
+Запрос:
+GET /posts/1/comments/
+Ответ:
+[
+  {
+    "id": 1,
+    "author": "user2",
+    "text": "Great post!",
+    "created": "2025-03-01T14:00:00Z"
+  },
+  {
+    "id": 2,
+    "author": "user3",
+    "text": "Interesting idea",
+    "created": "2025-03-01T16:00:00Z"
+  }
+]
+
+Пример 4: Добавление нового комментария
+
+Запрос:
+POST /posts/1/comments/
+Content-Type: application/json
+Authorization: Bearer <your_token>
+Тело запроса:
+
+{
+  "text": "Nice post!"
+}
+Ответ:
+
+{
+  "id": 3,
+  "author": "user1",
+  "text": "Nice post!",
+  "created": "2025-03-03T15:00:00Z"
+}
+
 Тестирование
 Для запуска тестов используйте команду:
 
@@ -83,4 +165,7 @@ pytest
 Лицензия
 Этот проект находится под лицензией MIT.
 
-Если тебе нужно что-то дополнить или изменить в README, сообщи!
+Автор
+Проект был разработан Радюком Дмитрием (Dzmitry-Radziuk).
+Email: mitia.radiuk@yandex.ru
+TG: https://t.me/DzzmitryR

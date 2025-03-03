@@ -1,36 +1,46 @@
 from django.contrib.auth import get_user_model
 from django.db import models
+from posts.constants import MAX_LENGTH_STR, MAX_LENGTH_TEXT
 
 User = get_user_model()
 
 
 class Group(models.Model):
-    """
-    Модель для группы с названием, слагом и описанием.
-    """
-    title = models.CharField(max_length=200, verbose_name='Название группы')
-    slug = models.SlugField(unique=True, verbose_name='Слаг')
-    description = models.TextField(verbose_name='Описание группы')
+    """Модель для группы с названием, слагом и описанием."""
+
+    title = models.CharField(
+        max_length=200,
+        verbose_name='Название группы'
+    )
+    slug = models.SlugField(
+        unique=True,
+        verbose_name='Слаг'
+    )
+    description = models.TextField(
+        verbose_name='Описание группы'
+    )
 
     class Meta:
         verbose_name = 'Группа'
         verbose_name_plural = 'Группы'
+        default_related_name = 'groups'
 
     def __str__(self):
         """Возвращает название группы."""
-        return self.title
+        return self.title[:30]
 
 
 class Post(models.Model):
-    """
-    Модель для поста с текстом, автором, датой и изображением.
-    """
+    """Модель для поста с текстом, автором, датой и изображением."""
+
     text = models.TextField()
-    pub_date = models.DateTimeField('Дата публикации', auto_now_add=True)
+    pub_date = models.DateTimeField(
+        auto_now_add=True,
+        verbose_name='Дата публикации'
+    )
     author = models.ForeignKey(
         User,
         on_delete=models.CASCADE,
-        related_name='posts',
         verbose_name='Автор'
     )
     image = models.ImageField(
@@ -40,8 +50,8 @@ class Post(models.Model):
         verbose_name='Изображение'
     )
     group = models.ForeignKey(
-        Group, on_delete=models.SET_NULL,
-        related_name='posts',
+        Group,
+        on_delete=models.SET_NULL,
         blank=True, null=True,
         verbose_name='Группа'
     )
@@ -49,26 +59,27 @@ class Post(models.Model):
     class Meta:
         verbose_name = 'Пост'
         verbose_name_plural = 'Посты'
+        default_related_name = 'posts'
+        ordering = ['-pub_date']
 
     def __str__(self):
         """Возвращает текст поста."""
-        return f'Пост {self.text[:50]} от автора: {self.author.username}'
+        return (f'Пост {self.text[:MAX_LENGTH_TEXT]}'
+                f'от автора: {self.author.username[:MAX_LENGTH_STR]}'
+                )
 
 
 class Comment(models.Model):
-    """
-    Модель для комментария с автором, постом и текстом.
-    """
+    """Модель для комментария с автором, постом и текстом."""
+
     author = models.ForeignKey(
         User,
         on_delete=models.CASCADE,
-        related_name='comments',
         verbose_name='Автор'
     )
     post = models.ForeignKey(
         Post,
         on_delete=models.CASCADE,
-        related_name='comments',
         verbose_name='Комментарий'
     )
     text = models.TextField()
@@ -80,21 +91,24 @@ class Comment(models.Model):
 
     class Meta:
         verbose_name = 'Комментарий'
-        verbose_name_plural = 'ПКомментарии'
+        verbose_name_plural = 'Комментарии'
+        default_related_name = 'comments'
+        ordering = ['created']
 
     def __str__(self):
         """Возвращает комментарий с автором и постом."""
-        return f'Комментарий от {self.author.username} к посту {self.post.id}'
+        return (f'Комментарий от {self.author.username[:MAX_LENGTH_STR]}'
+                f'к {self.post.id} посту.'
+                )
 
 
 class Follow(models.Model):
-    """
-    Модель для подписки с пользователем и его подписчиком.
-    """
+    """Модель для подписки с пользователем и его подписчиком."""
+
     user = models.ForeignKey(
         User,
         on_delete=models.CASCADE,
-        related_name='follower',
+        related_name='followers',
         verbose_name='Пользователь'
     )
     following = models.ForeignKey(
@@ -105,10 +119,18 @@ class Follow(models.Model):
     )
 
     class Meta:
-        unique_together = ('user', 'following')
+        constraints = [
+            models.UniqueConstraint(
+                fields=['user', 'following'],
+                name='unique_user_following'
+            )
+        ]
         verbose_name = 'Подписка'
         verbose_name_plural = 'Подписки'
 
     def __str__(self):
         """Возвращает строку подписки."""
-        return f'{self.user} подписан на {self.following}'
+        return (
+            f'{self.user.username[:MAX_LENGTH_STR]}'
+            f' подписан на {self.following.username[:MAX_LENGTH_STR]}'
+        )
